@@ -5,7 +5,7 @@
       this.ctx = canvas.getContext("2d");
       this.boardSize = boardSize || 19;
       this.onIntersectionClick = onIntersectionClick;
-      this.padding = 30;
+      this.padding = 44;
       this.gridColor = "#2a2212";
 
       this.bindEvents();
@@ -72,6 +72,31 @@
       }
 
       this.drawStarPoints();
+      this.drawCoordinates();
+    }
+
+    drawCoordinates() {
+      const ctx = this.ctx;
+      const cell = this.getCellSize();
+      const letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ";
+      const labelOffset = this.padding / 3;
+
+      ctx.save();
+      ctx.fillStyle = this.gridColor;
+      ctx.font = '16px "Segoe UI", sans-serif';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (let i = 0; i < this.boardSize; i += 1) {
+        const position = this.padding + i * cell;
+        const row = String(this.boardSize - i);
+        ctx.fillText(letters[i], position, labelOffset);
+        ctx.fillText(letters[i], position, this.canvas.height - labelOffset);
+        ctx.fillText(row, labelOffset, position);
+        ctx.fillText(row, this.canvas.width - labelOffset, position);
+      }
+
+      ctx.restore();
     }
 
     drawStarPoints() {

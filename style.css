@@ -49,6 +49,13 @@ body {
   padding: 16px;
 }
 
+.coordinate-hint {
+  margin: 8px 0 0;
+  color: var(--grid-color);
+  font-size: 14px;
+  text-align: center;
+}
+
 .side-panel h1 {
   margin: 0 0 12px;
   font-size: 20px;
