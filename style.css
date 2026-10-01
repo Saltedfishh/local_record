@@ -1,0 +1,128 @@
+:root {
+  --board-bg: #deb768;
+  --grid-color: #2a2212;
+  --panel-bg: #f7f7f7;
+  --line: #ddd;
+  --text: #222;
+  --danger: #c0392b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+  background: #ececec;
+}
+
+.app {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+.board-panel {
+  background: var(--board-bg);
+  border: 1px solid #b3893e;
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+#boardCanvas {
+  display: block;
+  width: 760px;
+  height: 760px;
+  background: var(--board-bg);
+  cursor: pointer;
+}
+
+.side-panel {
+  width: 340px;
+  background: var(--panel-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.side-panel h1 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.status-card {
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  line-height: 1.6;
+}
+
+.label {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+#commentInput {
+  width: 100%;
+  min-height: 170px;
+  resize: vertical;
+  border: 1px solid #c9c9c9;
+  border-radius: 6px;
+  padding: 8px;
+  font: inherit;
+  margin-bottom: 12px;
+  background: #fff;
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.button-column {
+  display: grid;
+  gap: 8px;
+}
+
+button {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button:hover:enabled {
+  background: #f1f1f1;
+}
+
+button.danger {
+  color: var(--danger);
+  border-color: #d88b83;
+}
+
+#message {
+  margin-top: 10px;
+  min-height: 24px;
+  font-size: 14px;
+  color: #555;
+}
+
+#message.error {
+  color: #b73224;
+}
