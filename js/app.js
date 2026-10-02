@@ -166,10 +166,38 @@
   });
 
   exportBtn.addEventListener("click", () => {
-    const sgf = window.SGF.exportSgf(game);
     const stamp = new Date().toISOString().replace(/[.:]/g, "-");
-    downloadTextFile(sgf, `go-record-${stamp}.sgf`, "application/x-go-sgf;charset=utf-8");
-    showMessage("SGF 已导出");
+    let suggestedName = `go-record-${stamp}.sgf`;
+    let promptText = "请输入导出文件名（可省略 .sgf 扩展名）：";
+
+    while (true) {
+      const input = window.prompt(promptText, suggestedName);
+      if (input === null) {
+        return;
+      }
+
+      const name = input.trim().replace(/\.sgf$/i, "");
+      let error = "";
+      if (!name) {
+        error = "文件名不能为空。";
+      } else if (/[<>:"/\\|?*\u0000-\u001f]/.test(name) || /[. ]$/.test(name)) {
+        error = "文件名不能包含 < > : \" / \\ | ? * 或控制字符，也不能以空格或句点结尾。";
+      } else if (/^(CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])(?:\.|$)/i.test(name)) {
+        error = "请勿使用 Windows 保留名称（如 CON、NUL、COM1）。";
+      }
+
+      if (error) {
+        suggestedName = input;
+        promptText = `${error}\n请输入导出文件名（可省略 .sgf 扩展名）：`;
+        continue;
+      }
+
+      const filename = `${name}.sgf`;
+      const sgf = window.SGF.exportSgf(game);
+      downloadTextFile(sgf, filename, "application/x-go-sgf;charset=utf-8");
+      showMessage(`SGF 已导出：${filename}`);
+      return;
+    }
   });
 
   loadFromLocal();
