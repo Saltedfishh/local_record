@@ -7,6 +7,10 @@
       this.onIntersectionClick = onIntersectionClick;
       this.padding = 44;
       this.gridColor = "#2a2212";
+      this.hoverIntersection = null;
+      this.board = null;
+      this.lastMove = null;
+      this.currentColor = "B";
 
       this.bindEvents();
     }
@@ -21,29 +25,48 @@
           return;
         }
 
-        const rect = this.canvas.getBoundingClientRect();
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
-        const x = (event.clientX - rect.left) * scaleX;
-        const y = (event.clientY - rect.top) * scaleY;
-
-        const cell = this.getCellSize();
-        const ix = Math.round((x - this.padding) / cell);
-        const iy = Math.round((y - this.padding) / cell);
-
-        if (ix < 0 || iy < 0 || ix >= this.boardSize || iy >= this.boardSize) {
-          return;
+        const intersection = this.getIntersection(event);
+        if (intersection) {
+          this.onIntersectionClick(intersection.x, intersection.y);
         }
-
-        const cx = this.padding + ix * cell;
-        const cy = this.padding + iy * cell;
-        const distance = Math.hypot(x - cx, y - cy);
-        if (distance > cell * 0.45) {
-          return;
-        }
-
-        this.onIntersectionClick(ix, iy);
       });
+
+      this.canvas.addEventListener("mousemove", (event) => {
+        this.setHoverIntersection(this.getIntersection(event));
+      });
+      this.canvas.addEventListener("mouseleave", () => this.setHoverIntersection(null));
+      window.addEventListener("blur", () => this.setHoverIntersection(null));
+    }
+
+    getIntersection(event) {
+      const rect = this.canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
+      const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
+      const cell = this.getCellSize();
+      const ix = Math.round((x - this.padding) / cell);
+      const iy = Math.round((y - this.padding) / cell);
+
+      if (ix < 0 || iy < 0 || ix >= this.boardSize || iy >= this.boardSize) {
+        return null;
+      }
+
+      const cx = this.padding + ix * cell;
+      const cy = this.padding + iy * cell;
+      if (Math.hypot(x - cx, y - cy) > cell * 0.45) {
+        return null;
+      }
+      return { x: ix, y: iy };
+    }
+
+    setHoverIntersection(intersection) {
+      if (this.hoverIntersection?.x === intersection?.x &&
+          this.hoverIntersection?.y === intersection?.y) {
+        return;
+      }
+      this.hoverIntersection = intersection;
+      if (this.board) {
+        this.render(this.board, this.lastMove, this.currentColor);
+      }
     }
 
     drawBoardBase() {
@@ -167,7 +190,24 @@
       ctx.fill();
     }
 
-    render(board, lastMove) {
+    drawHoverPreview() {
+      const point = this.hoverIntersection;
+      if (!point || this.board[point.y][point.x]) {
+        return;
+      }
+
+      const cell = this.getCellSize();
+      const size = cell * 0.45;
+      const px = this.padding + point.x * cell;
+      const py = this.padding + point.y * cell;
+      this.ctx.fillStyle = this.currentColor === "B" ? "#000" : "#fff";
+      this.ctx.fillRect(px - size / 2, py - size / 2, size, size);
+    }
+
+    render(board, lastMove, currentColor) {
+      this.board = board;
+      this.lastMove = lastMove;
+      this.currentColor = currentColor || "B";
       this.drawBoardBase();
       for (let y = 0; y < this.boardSize; y += 1) {
         for (let x = 0; x < this.boardSize; x += 1) {
@@ -178,6 +218,7 @@
         }
       }
       this.drawLastMoveMarker(lastMove);
+      this.drawHoverPreview();
     }
   }
 

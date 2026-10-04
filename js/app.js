@@ -62,7 +62,7 @@
   }
 
   function render() {
-    boardView.render(game.getBoard(), game.getLastMove());
+    boardView.render(game.getBoard(), game.getLastMove(), game.getCurrentColor());
 
     moveInfo.textContent = `第 ${game.currentMove} 手 / 共 ${game.getMoveCount()} 手`;
     turnInfo.textContent = `当前轮到：${game.getCurrentColor() === "B" ? "黑" : "白"}`;
