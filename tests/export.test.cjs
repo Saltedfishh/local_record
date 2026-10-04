@@ -16,6 +16,7 @@ function createApp(answers) {
     return {
       value: "", textContent: "", classList: { toggle() {}, remove() {} },
       listeners: {},
+      setAttribute() {},
       addEventListener(event, handler) { this.listeners[event] = handler; },
       click() { this.listeners.click?.(); },
     };

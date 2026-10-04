@@ -18,7 +18,10 @@
       <div class="status-card">
         <div id="moveInfo">第 0 手 / 共 0 手</div>
         <div id="turnInfo">当前轮到：黑</div>
+        <div id="trialInfo" role="status" aria-live="polite" hidden></div>
       </div>
+
+      <button id="trialBtn" type="button" aria-pressed="false">开始试下</button>
 
       <label for="commentInput" class="label">当前手备注</label>
       <textarea id="commentInput" placeholder="从第 1 手开始记录备注" disabled></textarea>

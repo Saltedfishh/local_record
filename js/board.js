@@ -11,6 +11,7 @@
       this.board = null;
       this.lastMove = null;
       this.currentColor = "B";
+      this.trialMoves = [];
 
       this.bindEvents();
     }
@@ -65,7 +66,7 @@
       }
       this.hoverIntersection = intersection;
       if (this.board) {
-        this.render(this.board, this.lastMove, this.currentColor);
+        this.render(this.board, this.lastMove, this.currentColor, this.trialMoves);
       }
     }
 
@@ -204,10 +205,36 @@
       this.ctx.fillRect(px - size / 2, py - size / 2, size, size);
     }
 
-    render(board, lastMove, currentColor) {
+    drawTrialMoveNumbers() {
+      // Keep only the latest move at each point, so captures and replays
+      // never leave old labels on an empty point or a replacement stone.
+      const stones = new Map();
+      for (const move of this.trialMoves) {
+        if (!move.pass) {
+          stones.set(`${move.x},${move.y}`, move);
+        }
+      }
+      const ctx = this.ctx;
+      const cell = this.getCellSize();
+      ctx.save();
+      ctx.font = `bold ${Math.floor(cell * 0.46)}px "Segoe UI", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (const move of stones.values()) {
+        if (this.board[move.y][move.x] !== move.color) {
+          continue;
+        }
+        ctx.fillStyle = move.color === "B" ? "#fff" : "#111";
+        ctx.fillText(String(move.number), this.padding + move.x * cell, this.padding + move.y * cell);
+      }
+      ctx.restore();
+    }
+
+    render(board, lastMove, currentColor, trialMoves) {
       this.board = board;
       this.lastMove = lastMove;
       this.currentColor = currentColor || "B";
+      this.trialMoves = trialMoves || [];
       this.drawBoardBase();
       for (let y = 0; y < this.boardSize; y += 1) {
         for (let x = 0; x < this.boardSize; x += 1) {
@@ -217,7 +244,11 @@
           }
         }
       }
-      this.drawLastMoveMarker(lastMove);
+      // A trial stone's number occupies the usual last-move marker position.
+      if (this.trialMoves.length === 0) {
+        this.drawLastMoveMarker(lastMove);
+      }
+      this.drawTrialMoveNumbers();
       this.drawHoverPreview();
     }
   }

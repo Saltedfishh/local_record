@@ -4,6 +4,8 @@
   const canvas = document.getElementById("boardCanvas");
   const moveInfo = document.getElementById("moveInfo");
   const turnInfo = document.getElementById("turnInfo");
+  const trialInfo = document.getElementById("trialInfo");
+  const trialBtn = document.getElementById("trialBtn");
   const commentInput = document.getElementById("commentInput");
   const messageEl = document.getElementById("message");
 
@@ -62,10 +64,17 @@
   }
 
   function render() {
-    boardView.render(game.getBoard(), game.getLastMove(), game.getCurrentColor());
+    boardView.render(game.getBoard(), game.getLastMove(), game.getCurrentColor(), game.getActiveTrialMoves());
 
     moveInfo.textContent = `第 ${game.currentMove} 手 / 共 ${game.getMoveCount()} 手`;
     turnInfo.textContent = `当前轮到：${game.getCurrentColor() === "B" ? "黑" : "白"}`;
+    const inTrial = game.isTrialMode;
+    trialBtn.textContent = inTrial ? "结束试下" : "开始试下";
+    trialBtn.setAttribute("aria-pressed", String(inTrial));
+    trialInfo.hidden = !inTrial;
+    trialInfo.textContent = inTrial
+      ? `试下中 · 从第${game.trialStartMove}手开始 · 当前试下第${game.trialCurrentMove}手`
+      : "";
 
     if (game.currentMove === 0) {
       commentInput.disabled = true;
@@ -76,15 +85,21 @@
       commentInput.placeholder = "请输入当前手的复盘备注";
       commentInput.value = game.moves[game.currentMove - 1].comment || "";
     }
+    if (inTrial) {
+      commentInput.disabled = true;
+    }
 
     const atStart = game.currentMove === 0;
     const atEnd = game.currentMove === game.getMoveCount();
-    firstBtn.disabled = atStart;
-    prevBtn.disabled = atStart;
-    undoBtn.disabled = atStart;
-    nextBtn.disabled = atEnd;
-    redoBtn.disabled = atEnd;
-    lastBtn.disabled = atEnd;
+    firstBtn.disabled = inTrial || atStart;
+    prevBtn.disabled = inTrial || atStart;
+    undoBtn.disabled = inTrial ? game.trialCurrentMove === 0 : atStart;
+    nextBtn.disabled = inTrial || atEnd;
+    redoBtn.disabled = inTrial ? game.trialCurrentMove === game.trialMoves.length : atEnd;
+    lastBtn.disabled = inTrial || atEnd;
+    newGameBtn.disabled = inTrial;
+    importBtn.disabled = inTrial;
+    importFile.disabled = inTrial;
   }
 
   function mutateAndRefresh(mutator) {
@@ -114,6 +129,13 @@
   }
 
   firstBtn.addEventListener("click", () => mutateAndRefresh(() => game.goFirst()));
+  trialBtn.addEventListener("click", () => mutateAndRefresh(() => {
+    if (game.isTrialMode) {
+      game.endTrial();
+    } else {
+      game.startTrial();
+    }
+  }));
   lastBtn.addEventListener("click", () => mutateAndRefresh(() => game.goLast()));
   prevBtn.addEventListener("click", () => mutateAndRefresh(() => game.prev()));
   nextBtn.addEventListener("click", () => mutateAndRefresh(() => game.next()));
@@ -121,6 +143,9 @@
   redoBtn.addEventListener("click", () => mutateAndRefresh(() => game.redo()));
 
   newGameBtn.addEventListener("click", () => {
+    if (game.isTrialMode) {
+      return;
+    }
     const confirmed = window.confirm("确定新建棋局吗？当前棋谱将被清空。");
     if (!confirmed) {
       return;
@@ -134,8 +159,16 @@
     saveToLocal();
   });
 
-  importBtn.addEventListener("click", () => importFile.click());
+  importBtn.addEventListener("click", () => {
+    if (!game.isTrialMode) {
+      importFile.click();
+    }
+  });
   importFile.addEventListener("change", () => {
+    if (game.isTrialMode) {
+      importFile.value = "";
+      return;
+    }
     const file = importFile.files && importFile.files[0];
     if (!file) {
       return;
@@ -143,6 +176,12 @@
 
     const reader = new FileReader();
     reader.onload = () => {
+      // A file read may finish after the user has started a trial.
+      if (game.isTrialMode) {
+        importFile.value = "";
+        showMessage("请先结束试下再导入 SGF", true);
+        return;
+      }
       try {
         const parsed = window.SGF.parseSgf(String(reader.result || ""));
         if (parsed.boardSize !== 19) {

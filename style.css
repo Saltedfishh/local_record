@@ -76,6 +76,22 @@ body {
   font-weight: 600;
 }
 
+#trialInfo {
+  color: #8a4800;
+  font-weight: 600;
+}
+
+#trialBtn {
+  width: 100%;
+  margin-bottom: 12px;
+  border-color: #b3893e;
+}
+
+#trialBtn[aria-pressed="true"] {
+  background: #fff0ce;
+  color: #6b3a00;
+}
+
 #commentInput {
   width: 100%;
   min-height: 170px;

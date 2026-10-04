@@ -9,6 +9,41 @@
       this.moves = [];
       this.currentMove = 0;
       this.snapshots = [this.createEmptyBoard()];
+      this.clearTrialState();
+    }
+
+    clearTrialState() {
+      this.isTrialMode = false;
+      this.trialStartMove = null;
+      this.trialMoves = [];
+      this.trialSnapshots = [];
+      this.trialCurrentMove = 0;
+    }
+
+    startTrial() {
+      if (this.isTrialMode) {
+        return;
+      }
+      this.trialStartMove = this.currentMove;
+      this.trialMoves = [];
+      // Rules always clone their input; the formal snapshots remain untouched.
+      this.trialSnapshots = [this.cloneBoard(this.getBoard())];
+      this.trialCurrentMove = 0;
+      this.isTrialMode = true;
+    }
+
+    endTrial() {
+      if (!this.isTrialMode) {
+        return;
+      }
+      this.currentMove = this.trialStartMove;
+      // getBoard() now returns the complete, unchanged formal snapshot,
+      // including any formal stones captured during the trial.
+      this.clearTrialState();
+    }
+
+    getActiveTrialMoves() {
+      return this.isTrialMode ? this.trialMoves.slice(0, this.trialCurrentMove) : [];
     }
 
     createEmptyBoard() {
@@ -31,6 +66,9 @@
     }
 
     getBoard() {
+      if (this.isTrialMode) {
+        return this.trialSnapshots[this.trialCurrentMove];
+      }
       return this.snapshots[this.currentMove];
     }
 
@@ -39,10 +77,14 @@
     }
 
     getCurrentColor() {
-      return this.currentMove % 2 === 0 ? "B" : "W";
+      const moveNumber = this.currentMove + (this.isTrialMode ? this.trialCurrentMove : 0);
+      return moveNumber % 2 === 0 ? "B" : "W";
     }
 
     getLastMove() {
+      if (this.isTrialMode && this.trialCurrentMove > 0) {
+        return this.trialMoves[this.trialCurrentMove - 1];
+      }
       if (this.currentMove === 0) {
         return null;
       }
@@ -50,6 +92,9 @@
     }
 
     truncateFutureIfNeeded() {
+      if (this.isTrialMode) {
+        return;
+      }
       if (this.currentMove < this.moves.length) {
         this.moves = this.moves.slice(0, this.currentMove);
         this.snapshots = this.snapshots.slice(0, this.currentMove + 1);
@@ -114,6 +159,10 @@
     }
 
     isKoViolation(nextBoard) {
+      if (this.isTrialMode && this.trialCurrentMove > 0) {
+        return this.boardsEqual(nextBoard, this.trialSnapshots[this.trialCurrentMove - 1]);
+      }
+      // The first trial move must also respect a ko in the formal history.
       if (this.currentMove < 1) {
         return false;
       }
@@ -158,10 +207,8 @@
     }
 
     playMove(x, y) {
-      this.truncateFutureIfNeeded();
-
       const move = {
-        number: this.moves.length + 1,
+        number: (this.isTrialMode ? this.trialCurrentMove : this.currentMove) + 1,
         color: this.getCurrentColor(),
         x,
         y,
@@ -177,20 +224,32 @@
         return { ok: false, error: "打劫：不能立即还原到上一盘面" };
       }
 
-      this.moves.push(move);
-      this.snapshots.push(result.board);
-      this.currentMove = this.moves.length;
+      if (this.isTrialMode) {
+        this.trialMoves = this.trialMoves.slice(0, this.trialCurrentMove);
+        this.trialSnapshots = this.trialSnapshots.slice(0, this.trialCurrentMove + 1);
+        this.trialMoves.push(move);
+        this.trialSnapshots.push(result.board);
+        this.trialCurrentMove = this.trialMoves.length;
+      } else {
+        this.truncateFutureIfNeeded();
+        this.moves.push(move);
+        this.snapshots.push(result.board);
+        this.currentMove = this.moves.length;
+      }
       return { ok: true };
     }
 
     setCommentForCurrentMove(comment) {
-      if (this.currentMove === 0) {
+      if (this.isTrialMode || this.currentMove === 0) {
         return;
       }
       this.moves[this.currentMove - 1].comment = comment || "";
     }
 
     goToMove(moveNumber) {
+      if (this.isTrialMode) {
+        return;
+      }
       this.currentMove = Math.max(0, Math.min(moveNumber, this.moves.length));
     }
 
@@ -211,10 +270,18 @@
     }
 
     undo() {
+      if (this.isTrialMode) {
+        this.trialCurrentMove = Math.max(0, this.trialCurrentMove - 1);
+        return;
+      }
       this.prev();
     }
 
     redo() {
+      if (this.isTrialMode) {
+        this.trialCurrentMove = Math.min(this.trialMoves.length, this.trialCurrentMove + 1);
+        return;
+      }
       this.next();
     }
 
